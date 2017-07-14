@@ -1,0 +1,6 @@
+[package]
+name = "nynaeve"
+version = "0.1.0"
+authors = ["Enrico Lovisotto <enricolovisotto@gmail.com>"]
+
+[dependencies]
