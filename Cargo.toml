@@ -1,6 +1,8 @@
 [package]
 name = "nynaeve"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["Enrico Lovisotto <enricolovisotto@gmail.com>"]
 
 [dependencies]
+postgres = "0.14"
+chrono = "0.4"
