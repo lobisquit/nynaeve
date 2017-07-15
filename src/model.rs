@@ -1,4 +1,5 @@
 use std::fmt;
+use std::cmp::Ordering;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Weekday {
@@ -42,10 +43,14 @@ impl Weekday {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Place {
-    pub name: String,
+    name: String,
 }
 
 impl Place {
+    pub fn name(&self) -> &String {
+        &self.name
+    }
+
     pub fn new<S: Into<String>>(name: S) -> Place {
         let place_name: String = name.into();
         Place{ name: place_name }
@@ -54,17 +59,36 @@ impl Place {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Time {
-    pub hour: usize,
-    pub minute: usize,
+    hour: usize,
+    minute: usize,
 }
 
 impl Time {
+    pub fn hour(&self) -> usize {
+        self.hour
+    }
+
+    pub fn minute(&self) -> usize {
+        self.minute
+    }
+
     pub fn new(hour: usize, minute: usize) -> Result<Time, String> {
         if hour <= 24 && minute <= 60 {
             Ok(Time {hour: hour, minute: minute})
         }
         else {
             Err(format!("{}:{} is and invalid Time", hour, minute))
+        }
+    }
+}
+
+impl PartialOrd for Time {
+    fn partial_cmp(&self, other: &Time) -> Option<Ordering> {
+        if self.hour == other.hour {
+            Some(self.minute.cmp(&other.minute))
+        }
+        else {
+            Some(self.hour.cmp(&other.hour))
         }
     }
 }
@@ -77,12 +101,16 @@ impl fmt::Display for Time {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Alarm {
-    pub place: Place,
-    pub days: Vec<Weekday>,
-    pub time: Time,
+    place: Place,
+    days: Vec<Weekday>,
+    time: Time,
 }
 
 impl Alarm {
+    pub fn new(place: Place, days: Vec<Weekday>, time: Time) -> Alarm {
+        Alarm { place: place, days: days, time: time }
+    }
+
     pub fn subset(&self, other: &Alarm) -> bool {
         // check place and time are the same
         if other.place.eq(&self.place) && self.time.eq(&other.time) {
