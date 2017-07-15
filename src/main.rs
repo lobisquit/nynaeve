@@ -18,29 +18,86 @@ impl<'a> Database<'a> {
 
     fn init(&self, reset: bool) {
         if reset {
-            // erase database
-            self.conn.execute("
-                DROP SCHEMA public CASCADE;
-                CREATE SCHEMA public;
-                GRANT ALL ON SCHEMA public TO postgres;
-                GRANT ALL ON SCHEMA public TO public;
-                COMMENT ON SCHEMA public IS 'standard public> schema';", &[]).ok().unwrap();
+            // one execute can have only a single query, loop needed
+            let commands = [
+                "DROP SCHEMA public CASCADE;",
+                "CREATE SCHEMA public;",
+                "GRANT ALL ON SCHEMA public TO postgres;",
+                "GRANT ALL ON SCHEMA public TO public;",
+                "COMMENT ON SCHEMA public IS 'standard public> schema';"];
+
+            for command in &commands {
+                self.conn.execute(command, &[])
+                    .ok()
+                    .expect(format!("Query '{}' failed", command).as_ref());
+            }
+        }
+        let commands = [
+            "CREATE TABLE if not exists place (name VARCHAR PRIMARY KEY);",
+            "CREATE TABLE if not exists weekday (id INTEGER PRIMARY KEY);",
+            "CREATE TABLE if not exists alarm (
+                id     SERIAL PRIMARY KEY,
+                hour   INTEGER NOT NULL,
+                minute INTEGER NOT NULL,
+                place_name VARCHAR,
+                weekday_alarm INTEGER);",
+            "CREATE TABLE if not exists alarm (
+                id     INTEGER PRIMARY KEY,
+                hour   INTEGER NOT NULL,
+                minute INTEGER NOT NULL,
+                place_name VARCHAR,
+                weekday_alarm INTEGER);",
+            "CREATE TABLE if not exists weekday_alarm (
+                weekday_id INTEGER NOT NULL,
+                alarm_id SERIAL NOT NULL);",
+        ];
+        // create tables
+        for command in &commands {
+            self.conn.execute(command, &[])
+                .ok()
+                .expect(format!("Query '{}' failed", command).as_ref());
         }
 
-        self.conn.execute(
-            "CREATE TABLE if not exists place (id  VARCHAR  PRIMARY KEY)", &[]).ok().expect("Failed to create table \"place\"");
-
-        self.conn.execute(
-            "CREATE TABLE if not exists weekday (id  INTEGER  PRIMARY KEY)", &[]).ok().expect("Failed to create table \"weekday\"");
-
         for day in 0..7 {
-            println!("Insert {:?}", day);
-            self.conn.execute(
-                "INSERT INTO weekday (id) VALUES ($1)",
-                &[&day]).ok();
+            self.conn.execute("INSERT INTO weekday (id) VALUES ($1);", &[&day]);
         }
     }
 
+    fn add_place(&self, place: &Place) {
+        let name: &str = place.name().as_ref();
+        self.conn.execute("INSERT INTO place (name) VALUES ($1);", &[&name]);
+    }
+
+    fn get_places(&self) -> Vec<Place> {
+        let mut places = vec![];
+        for row in &self.conn.query("SELECT name FROM place", &[]).unwrap() {
+            let name: String = row.get(0);
+            places.push(Place::new(name));
+        }
+        places
+    }
+
+    fn add_alarm(&self, alarm: &Alarm) {
+        // add place if not in db
+        if ! self.get_places().contains(&alarm.place()) {
+            self.add_place(alarm.place());
+        }
+
+    }
+
+    fn get_alarms(&self) -> Vec<Alarm> {
+        let mut alarms = vec![];
+        for row in &self.conn.query(
+            "select place_name, hour, minute, weekday from alarm
+            join place on place_name = place.name
+            join weekday_alarm on alarm.id = weekday_alarm.alarm_id
+            join weekday on weekday.id = weekday_alarm.weekday_id;", &[]).unwrap() {
+
+            let name: String = row.get(0);
+            places.push(Place::new(name));
+        }
+        places
+    }
     fn get(&self) -> Vec<String> {
         let mut r = vec![];
         for row in &self.conn.query("SELECT id FROM weekday", &[]).unwrap() {
@@ -53,13 +110,32 @@ impl<'a> Database<'a> {
 }
 
 fn main() {
-    let mut db = env::var("DATABASE_URL").expect("No such env variable DATABASE_URL");
+    let db = env::var("DATABASE_URL").expect("No such env variable DATABASE_URL");
 
     let conn = Connection::connect(db, TlsMode::None).unwrap();
     let db = Database::new(&conn);
     db.init(true);
-    println!("{:?}", db.get());
+    db.add_place(&Place::new("pollo"));
+
+    let a = Alarm::new(
+        Place::new("home"),
+        vec![Monday, Wednesday],
+        Time::new(10, 10).unwrap());
+    db.add_alarm(&a);
+    println!("{:?}", db.get_places());
+    // db.add_place("pollo2");
+    // println!("{:?}", db.get());
     // db.lalala();
+
+    //
+    // println!("{:?}", Time::new(13, 20).unwrap() > Time::new(12, 20).unwrap());
+    // println!("{:?}", Time::new(13, 20).unwrap().hour());
+    // println!("{:?}",  Place::new("home").name());
+    // let a = Alarm::new(
+    //     Place::new("home"),
+    //     vec![Monday, Wednesday],
+    //     Time::new(10, 10).unwrap());
+    // println!("{:?}", a);
 }
 
 // fn main() {
