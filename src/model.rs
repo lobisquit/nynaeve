@@ -111,6 +111,18 @@ impl Alarm {
         Alarm { place: place, days: days, time: time }
     }
 
+    pub fn place(&self) -> &Place {
+        &self.place
+    }
+
+    pub fn days(&self) -> &Vec<Weekday> {
+        &self.days
+    }
+
+    pub fn time(&self) -> &Time {
+        &self.time
+    }
+
     pub fn subset(&self, other: &Alarm) -> bool {
         // check place and time are the same
         if other.place.eq(&self.place) && self.time.eq(&other.time) {
