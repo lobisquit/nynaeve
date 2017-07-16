@@ -144,9 +144,7 @@ impl<'a> Database<'a> {
             .query(
                 "SELECT id, place_name, time
                 FROM alarms, places
-                WHERE alarms.place_name = places.name;",
-                &[],
-            )
+                WHERE alarms.place_name = places.name;", &[])
             .unwrap();
         for row in &alarms_query {
             let id: i32 = row.get("id");
@@ -167,10 +165,16 @@ impl<'a> Database<'a> {
 
             let mut weekdays = vec![];
             for combination_row in &weekdays_query {
-                let weekday = Weekday::from_int(combination_row.get("weekday_num")).unwrap();
+                let weekday = Weekday::from_int(
+                    combination_row.get("weekday_num")
+                ).unwrap();
                 weekdays.push(weekday);
             }
-            alarms.push(Alarm::new(Place::new(place_name), weekdays, time));
+            alarms.push(
+                Alarm::new(
+                    Place::new(place_name),
+                    weekdays,
+                    time));
         }
         alarms
     }
@@ -178,15 +182,15 @@ impl<'a> Database<'a> {
     pub fn remove_alarm(&self, alarm: Alarm) -> Result<(), String> {
         if !self.get_alarms().contains(&alarm) {
             Err("No such alarm in database".to_owned())
-        } else {
+        }
+        else {
             let time: NaiveTime = alarm.time().into();
             &self.conn
                 .query(
                     "DELETE FROM alarms WHERE
                     alarms.place_name = $1 AND
                     alarms.time = $2",
-                    &[&alarm.place().name(), &time],
-                )
+                    &[&alarm.place().name(), &time])
                 .unwrap();
             Ok(())
         }
