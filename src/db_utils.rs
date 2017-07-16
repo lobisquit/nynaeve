@@ -179,7 +179,7 @@ impl<'a> Database<'a> {
         alarms
     }
 
-    pub fn remove_alarm(&self, alarm: Alarm) -> Result<(), String> {
+    pub fn remove_alarm(&self, alarm: &Alarm) -> Result<(), String> {
         if !self.get_alarms().contains(&alarm) {
             Err("No such alarm in database".to_owned())
         }

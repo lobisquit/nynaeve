@@ -5,7 +5,7 @@ use self::chrono::Timelike;
 use std::cmp::Ordering;
 use std::fmt;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Weekday {
     Monday,
     Tuesday,
@@ -45,7 +45,7 @@ impl Weekday {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Place {
     name: String,
 }
@@ -61,7 +61,7 @@ impl Place {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Time {
     hour: i32,
     minute: i32,
@@ -113,7 +113,7 @@ impl From<NaiveTime> for Time {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Alarm {
     place: Place,
     weekdays: Vec<Weekday>,
